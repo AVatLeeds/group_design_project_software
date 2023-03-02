@@ -174,7 +174,7 @@ function Controls()
         writeline(port, "G28");
         writeline(port, "G91");
 
-        dwell = str2double(dwell_time_knob.value);
+        dwell = str2double(dwell_time_knob.Value);
         x_coord = x_coord_box.Value;
         y_coord = y_coord_box.Value;
         step = step_box.Value; 
@@ -194,26 +194,29 @@ function Controls()
 end
 
 function sweepScan(dwell,xbound,ybound,step_size, port)
-    optical_scan = optical_scan(xbound, ybound, step_size, '\dev\ttyACM0'); 
+    import optical_scan.*;
+    scan = optical_scan(xbound, ybound, step_size, "/dev/ttyACM1"); 
     direction = 1;
-    for i = 0:ybound
+    for i = 1:(ybound / step_size)
         pause(dwell / 2);
-        light_sample(optical_scan);
+        light_sample(scan);
         pause(dwell / 2);
-      for j = 0:xbound
+      for j = 1:(xbound / step_size)
             string = "G0 X" + (step_size * direction) + "F10000";
             writeline(port, string);
-            h_step(optical_scan, direction);
+            h_step(scan, direction);
             pause(dwell / 2);
-            light_sample(optical_scan);
+            light_sample(scan);
             pause(dwell / 2);
       end
       string = "G0 Y" + (step_size)  + "F10000";
       writeline(port, string);
       direction = direction * -1;
-      v_step(optical_scan);
+      v_step(scan, 1);
     end
-    optical_matrix = get_sample_matrix(optical_scan);
+    optical_matrix = get_sample_matrix(scan);
+    image(optical_matrix .* 250);
+    colormap('gray');
 end
 
 %function targettedScan(xbound,ybound)
