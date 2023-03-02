@@ -15,6 +15,7 @@ classdef optical_scan < handle
             disp("Connecting to Arduino...");
             obj.sampler = arduino(sampler_port, "Uno");
             configurePin(obj.sampler, "A0", "AnalogInput");
+            writeDigitalPin(obj.sampler, "D9", 1);
             disp("Arduino configured.");
         end
 
