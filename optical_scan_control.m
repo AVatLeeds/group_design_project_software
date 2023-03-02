@@ -28,12 +28,12 @@ function Controls()
 
     % ------- Manage App Layout ------- %
     grid = uigridlayout(figure,[10 10]);
-    grid.RowHeight = {192, 192, 192, 192, 192, 192, 192, 192, 192};
-    grid.ColumnWidth = {108, 108, 108, 108, 108, 108, 108, 108, 108};
+    grid.RowHeight = {50, 50, 50, 50, 200, 50, 50, 50, 50};
+    grid.ColumnWidth = {150, 150, 150, 150, 100, 100, 100, 100, 100};
 
     % ------- Create UI components ------- %
     title = uilabel(grid);                  % Program title
-    port_setup = uilable(grid);             % Serial port setup instructions
+    port_setup = uilabel(grid);             % Serial port setup instructions
     dimensions = uilabel(grid);             % Scan dimension instructions  
     step_size = uilabel(grid);              % Step size instructions
     dwell_time= uilabel(grid);              % Dwell time instructions
@@ -109,6 +109,7 @@ function Controls()
     graph.Layout.Row = [2 9];
     graph.Layout.Column = [6 10];
 
+
     % ------- Configure UI component appearance ------- %
     % Title attributes
     title.Text = "<b> XY Positioning Control Software </b>";
@@ -133,11 +134,11 @@ function Controls()
     % Set Lamp Colour
     scanstatus.Color = [1 0 0];
 
-    baud_rate_dd.Items = {110, 300, 600, 1200, 2400, 4800, 9600, 14400, 19200, 38400, 57600, 115200, 128000, 256000};
-    baud_rate_dd.value = 115200;
+    baud_rate_dd.Items = {'110', '300', '600', '1200', '2400', '4800', '9600', '14400', '19200', '38400', '57600', '115200', '128000', '256000'};
+    baud_rate_dd.Value = '115200';
 
-    dwell_time.Items = {'0.4', '0.6', '0.8', '1.0', '1.2', '1.4', '1.6', '1.8'. '2.0'};
-    dwell_time.Value = '1.0';
+    dwell_time_knob.Items = {'0.4', '0.6', '0.8', '1.0', '1.2', '1.4', '1.6', '1.8', '2.0'};
+    dwell_time_knob.Value = '1.0';
 
     x_coord_box.Value = 100;                 %Default value              
     x_coord_box.Limits = [0 740];            %Set lower and upper bound
@@ -179,12 +180,7 @@ function Controls()
         step = step_box.Value; 
 
         scanstatus.Color = [0 1 0];
-        sweepScan(dwell,x_coord,y_coord,step, port)                
-            case "Targetted Scan" 
-                scanstatus.Color = [0 1 0];
-                targettedScan(x_coord,y_coord)
-                
-        end
+        sweepScan(dwell,x_coord,y_coord,step, port);
     end
     
     %Functionality for pressing the end button
@@ -197,19 +193,27 @@ function Controls()
     end
 end
 
-function sweepScan(dwell,xbound,ybound,step_size port)
+function sweepScan(dwell,xbound,ybound,step_size, port)
+    optical_scan = optical_scan(xbound, ybound, step_size, '\dev\ttyACM0'); 
     direction = 1;
     for i = 0:ybound
+        pause(dwell / 2);
+        light_sample(optical_scan);
+        pause(dwell / 2);
       for j = 0:xbound
             string = "G0 X" + (step_size * direction) + "F10000";
             writeline(port, string);
-            pause(dwell);
+            h_step(optical_scan, direction);
+            pause(dwell / 2);
+            light_sample(optical_scan);
+            pause(dwell / 2);
       end
       string = "G0 Y" + (step_size)  + "F10000";
       writeline(port, string);
       direction = direction * -1;
-      pause(dwell);
+      v_step(optical_scan);
     end
+    optical_matrix = get_sample_matrix(optical_scan);
 end
 
 %function targettedScan(xbound,ybound)
