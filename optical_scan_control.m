@@ -10,19 +10,15 @@
 % outputs graphs showing the results of the scan
 %------------------------------------------------%
 
-%Initialising the port
-%port = serialport("/dev/ttyACM0", 115200);
-writeline(port, "G28");
-writeline(port, "G91");
-
 setspeed = 0;   %Speed for scanner
 x_coord = 0;    %X-coordinate boundary for scanner
 y_coord = 0;    %Y-coordinate boundary for scanner
 
 close all force %Close all windows
-Controls(port)
+clear;
+Controls()
 
-function Controls(port)
+function Controls()
 % Main function
 
     % ------- Create Figure Window ------- %
@@ -122,13 +118,13 @@ function Controls(port)
     port_setup.Text = "1) Set port name and baud rate.";
     port_setup.FontSize = 14;
 
-    dimensions.Text = "2) Set port dimensions.";
+    dimensions.Text = "2) Set port dimensions X (mm) and Y (mm).";
     dimensions.FontSize = 14;
 
-    step_size.Text = "3) Set step size.";
+    step_size.Text = "3) Set step size (mm).";
     step_size.FontSize = 14;
 
-    dwell_time.Text = "4) Set dwell time.";
+    dwell_time.Text = "4) Set dwell time (s).";
     dwell_time.FontSize = 14;
 
     averages.Text = "5) Set number of averages.";
@@ -137,16 +133,27 @@ function Controls(port)
     % Set Lamp Colour
     scanstatus.Color = [1 0 0];
 
+    baud_rate_dd.Items = {110, 300, 600, 1200, 2400, 4800, 9600, 14400, 19200, 38400, 57600, 115200, 128000, 256000};
+    baud_rate_dd.value = 115200;
+
     dwell_time.Items = {'0.4', '0.6', '0.8', '1.0', '1.2', '1.4', '1.6', '1.8'. '2.0'};
     dwell_time.Value = '1.0';
 
     x_coord_box.Value = 100;                 %Default value              
-    x_coord_box.Limits = [0 100];            %Set lower and upper bound
+    x_coord_box.Limits = [0 740];            %Set lower and upper bound
     x_coord_box.RoundFractionalValues = 1;   %Round decimals
-    % Set y-coord box attributes
-    ycoord.Value = 100;                 %Default value
-    ycoord.Limits = [0 100];            %Set lower and upper bound
-    ycoord.RoundFractionalValues = 1;   %Round decimals
+
+    y_coord_box.Value = 100;                 %Default value
+    y_coord_box.Limits = [0 740];            %Set lower and upper bound
+    y_coord_box.RoundFractionalValues = 1;   %Round decimals
+
+    step_box.Value = 10;
+    step_box.Limits = [1 740];
+    step_box.RoundFractionalValues = 1;
+
+    averages_box.Value = 0;
+    averages_box.Limits = [0 100];
+
     % Set begin button attributes
     begin.Text = 'Begin';               %Text
     begin.FontColor = [0 0 0];          %Black font
@@ -158,31 +165,21 @@ function Controls(port)
     % Tabulate different scan types
     scantypes.Items = ["Choose scan type" "Default Scan" "Sweep Scan" "Targetted Scan"];
     scantypes.Value = "Choose scan type";   %Default value 
-    % Setup basic graphs 
-    x = [0:1:10];
-    y = x;
-    z = x.^2;
-    plot(topgraph,x,y);
-    plot(bottomgraph,x,z);
     
     % ------- Button Functionality ------- %
     %Functionality for pressing the begin button
     function beginPressed(src,event)
-        scantype = scantypes.Value;
-        s = speed.Value;
-        setspeed = str2double(s);
-        x_coord = xcoord.Value;
-        y_coord = ycoord.Value;
-        switch scantype
-            case "Choose scan type"
-                alert = uifigure;
-                uialert(alert,'Please choose a scan type','Invalid Selection');
-            case "Default Scan"
-                scanstatus.Color = [0 1 0];
-                %defaultScan(a,a,a)
-            case "Sweep Scan"     
-                scanstatus.Color = [0 1 0];
-                sweepScan(setspeed,x_coord,y_coord, port)                
+        port = serialport(port_box.Value, baud_rate_dd.Value);
+        writeline(port, "G28");
+        writeline(port, "G91");
+
+        dwell = str2double(dwell_time_knob.value);
+        x_coord = x_coord_box.Value;
+        y_coord = y_coord_box.Value;
+        step = step_box.Value; 
+
+        scanstatus.Color = [0 1 0];
+        sweepScan(dwell,x_coord,y_coord,step, port)                
             case "Targetted Scan" 
                 scanstatus.Color = [0 1 0];
                 targettedScan(x_coord,y_coord)
@@ -200,27 +197,28 @@ function Controls(port)
     end
 end
 
-function sweepScan(speed,xbound,ybound, port)
+function sweepScan(dwell,xbound,ybound,step_size port)
     direction = 1;
     for i = 0:ybound
       for j = 0:xbound
-            string = "G0 X" + (direction*10) + "F10000";
+            string = "G0 X" + (step_size * direction) + "F10000";
             writeline(port, string);
-            pause(0.2 / speed);
+            pause(dwell);
       end
-      writeline(port, "G0 Y10 F10000");
+      string = "G0 Y" + (step_size)  + "F10000";
+      writeline(port, string);
       direction = direction * -1;
-      pause(0.2 / speed)
+      pause(dwell);
     end
 end
 
-function targettedScan(xbound,ybound)
-    xstring = "G0 X" + (xbound*10);
-    writeline(port, xstring);
-    ystring = "G0 Y" + (ybound*10);
-    writeline(port, ystring);
-end
+%function targettedScan(xbound,ybound)
+%    xstring = "G0 X" + (xbound*10);
+%    writeline(port, xstring);
+%    ystring = "G0 Y" + (ybound*10);
+%    writeline(port, ystring);
+%end
 
-function defaultScan(speed,xbound,ybound)
-    %Insert Default Scan Code Here
-end
+%function defaultScan(speed,xbound,ybound)
+%    %Insert Default Scan Code Here
+%end
