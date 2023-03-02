@@ -56,7 +56,7 @@ function Controls()
     % ------- Lay out UI components ------- %
 
     title.Layout.Row = 1;
-    title.Layout.Column = [4 7];
+    title.Layout.Column = [3 8];
 
     port_setup.Layout.Row = 2;
     port_setup.Layout.Column = [1 2];
@@ -170,7 +170,7 @@ function Controls()
     % ------- Button Functionality ------- %
     %Functionality for pressing the begin button
     function beginPressed(src,event)
-        port = serialport(port_box.Value, baud_rate_dd.Value);
+        port = serialport(port_box.Value, str2double(baud_rate_dd.Value));
         writeline(port, "G28");
         writeline(port, "G91");
 
