@@ -226,9 +226,9 @@ function Controls()
                 %scanstatus.Color = [0 1 0];
                 %defaultScan(a,a,a)
             case "Sweep Scan"
-                progressBar(x_coord,y_coord,step,dwell)
+                %progressBar(x_coord,y_coord,step,dwell)
                 scanstatus.Color = [0 1 0];
-                sweepScan(dwell,x_coord,y_coord,step, port);                
+                sweepScan(dwell,x_coord,y_coord,step, port, topgraph, bottomgraph);                
             case "Targetted Scan" 
                 scanstatus.Color = [0 1 0];
                 targettedScan(x_coord,y_coord,port)   
@@ -246,7 +246,7 @@ function Controls()
     end
 end
 
-function sweepScan(dwell,xbound,ybound,step_size, port)
+function sweepScan(dwell,xbound,ybound,step_size, port, topgraph, bottomgraph)
     import optical_scan.*;
     scan = optical_scan(xbound, ybound, step_size, "/dev/ttyACM1"); 
     direction = 1;
@@ -268,7 +268,7 @@ function sweepScan(dwell,xbound,ybound,step_size, port)
       v_step(scan, 1);
     end
     optical_matrix = get_sample_matrix(scan);
-    imaging(optical_matrix)
+    imaging(optical_matrix, topgraph, bottomgraph)
 end
 
 function targettedScan(xbound,ybound,port)
@@ -305,9 +305,9 @@ function progressBar(xbound, ybound, step_size, dwell)
     close(progbarfig)
 end
 
-function imaging(matrix) 
+function imaging(matrix, topgraph, bottomgraph) 
     image(topgraph,matrix .* 250);
     colormap('gray');
     reconstructed = mat2gray(matrix);
-    imshow(reconstructed,bottomgraph)
+    imshow(reconstructed)
 end
