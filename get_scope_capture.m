@@ -1,24 +1,31 @@
 clear;
 
-tcpip = tcpclient('192.168.0.20', 5555);
-query(tcpip, "*IDN?")
+tcpip = tcpclient('10.42.0.84', 5555);
+writeline(tcpip, "*IDN?");
+readline(tcpip)
 
 writeline(tcpip, ':RUN');
 writeline(tcpip, ':SINGle');
 
-trigger_status = query(tcpip, ':TRIG:STAT?')
-while ~strcmp(trigger_status, "STOP" + newline)
-    trigger_status = query(tcpip, ':TRIG:STAT?')
+writeline(tcpip, ':TRIG:STAT?');
+trigger_status = readline(tcpip)
+while ~strcmp(trigger_status, "STOP")
+    writeline(tcpip, ':TRIG:STAT?');
+    trigger_status = readline(tcpip)
 end
 
 writeline(tcpip, ':WAV:MODE RAW');
 writeline(tcpip, ':WAV:STOP 500000');
 
-string = query(tcpip, ":WAV:DATA?");
+writeline(tcpip, ":WAV:DATA?");
+string = readline(tcpip);
+string = convertStringsToChars(string);
 ascii_data = string(12:end);
 
-x_increment = str2double(query(tcpip, ":WAV:XINC?"));
-y_increment = str2double(query(tcpip, ":WAV:YINC?"));
+writeline(tcpip, ":WAV:XINC?");
+x_increment = str2double(readline(tcpip));
+writeline(tcpip, ":WAV:YINC?");
+y_increment = str2double(readline(tcpip));
 
 data = zeros(length(ascii_data), 1);
 
