@@ -207,7 +207,7 @@ function Controls()
             case "Sweep Scan"
                 %progressBar(x_coord,y_coord,step,dwell)
                 scanstatus.Color = [0 1 0];
-                sweepScan(dwell,x_coord,y_coord,step, port);                
+                sweepScan(dwell,x_coord,y_coord,step, port, ardfig);                
             case "Targetted Scan" 
                 scanstatus.Color = [0 1 0];
                 targettedScan(x_coord,y_coord,port)   
@@ -217,8 +217,6 @@ function Controls()
     %Functionality for pressing the end button
     function endingPressed(src,event)
         scanstatus.Color = [1 0 0];
-        matrix = imread('rice.png');
-        seeResults(matrix)
         writeline(port, "M0");
         pause(2);
         writeline(port, "M2");
@@ -237,11 +235,14 @@ function Controls()
         K = mat2gray(J);
         imshow(K)
         title('Reconstructed Image:')
-        end
-end
-
-function sweepScan(dwell,xbound,ybound,step_size, port)
+    end
+    
+    function sweepScan(dwell,xbound,ybound,step_size, port, ardfig)
     % --------- Progress Bar ----------%
+    
+    % --------- Optical Scan ----------%
+    import optical_scan.*;
+    scan = optical_scan(xbound, ybound, step_size, "/dev/ttyACM1"); 
     close(ardfig)
     progbarfig = uifigure;
     progbarfig.Position = [500 500 420 180];
@@ -253,10 +254,8 @@ function sweepScan(dwell,xbound,ybound,step_size, port)
     pause(dwell);
     prog.Message = 'Scan in progress...';
     increment = (xbound/step_size) * (ybound/step_size);
-    % --------- Optical Scan ----------%
-    import optical_scan.*;
-    scan = optical_scan(xbound, ybound, step_size, "/dev/ttyACM1"); 
     direction = 1;
+    total = 0;
     for i = 1:(ybound / step_size)
         pause(dwell / 2);
         light_sample(scan);
@@ -268,11 +267,16 @@ function sweepScan(dwell,xbound,ybound,step_size, port)
             pause(dwell / 2);
             light_sample(scan);
             pause(dwell / 2);
-            prog.Value = (j)/increment;
+            total = total + 1;
+            prog.Value = (total)/increment;
             pause(dwell)
             if prog.CancelRequested == 1
+                writeline(port,'M0');
                 break
             end
+      end
+      if prog.CancelRequested == 1
+          break
       end
       string = "G0 Y" + (step_size)  + "F10000";
       writeline(port, string);
@@ -280,9 +284,12 @@ function sweepScan(dwell,xbound,ybound,step_size, port)
       v_step(scan, 1);
     end
     optical_matrix = get_sample_matrix(scan);
-    seeResults(optical_matrix)
-    endingPressed   
+    seeResults(optical_matrix)   
+    end
+
 end
+
+
     
 
 function targettedScan(xbound,ybound,port)
