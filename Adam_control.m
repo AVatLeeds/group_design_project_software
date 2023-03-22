@@ -22,17 +22,17 @@ function Controls()
 % Main function
 
     % ------- Create Figure Window ------- %
-    figure = uifigure;
-    set(figure, 'Position', get(0, 'Screensize')); %Fullscreen
-    figure.Name = "XY Positioning Control Software";
+    fig = uifigure;
+    set(fig, 'Position', get(0, 'Screensize')); %Fullscreen
+    fig.Name = "XY Positioning Control Software";
 
     % ------- Manage App Layout ------- %
-    grid = uigridlayout(figure,[10 10]);
-    grid.RowHeight = {50, 50, 50, 50, 200, 50, 50, 50, 50, 20,'1x'};
+    grid = uigridlayout(fig,[10 10]);
+    grid.RowHeight = {50, 50, 50, 50, 200, 50, 50, 50, 50, 20, 50, '1x'};
     grid.ColumnWidth = {150, 150, 150, 150, 100, 100, 100, 100, 100,'1x'};
 
     % ------- Create UI components ------- %
-    title = uilabel(grid);                  % Program title
+    ptitle = uilabel(grid);                  % Program title
     port_setup = uilabel(grid);             % Serial port setup instructions
     dimensions = uilabel(grid);             % Scan dimension instructions  
     step_size = uilabel(grid);              % Step size instructions
@@ -53,14 +53,15 @@ function Controls()
     y_coord_box = uieditfield(grid,'numeric');   %Y-coordinate numeric input box
     step_box = uieditfield(grid, 'numeric');
     averages_box = uieditfield(grid, 'numeric');
-    
-    topgraph = uiaxes(grid);
-    bottomgraph = uiaxes(grid);
 
+    graph = uiaxes(grid);
+    graph.Layout.Row = [1 10];
+    graph.Layout.Column = [6 10];
+    
     % ------- Lay out UI components ------- %
 
-    title.Layout.Row = 1;
-    title.Layout.Column = [3 8];
+    ptitle.Layout.Row = 1;
+    ptitle.Layout.Column = [3 8];
 
     port_setup.Layout.Row = 2;
     port_setup.Layout.Column = [1 2];
@@ -122,17 +123,11 @@ function Controls()
     scantypes.Layout.Row = 8;
     scantypes.Layout.Column = 3;
 
-    topgraph.Layout.Row = [1 6];
-    topgraph.Layout.Column = [6 10];
-
-    bottomgraph.Layout.Row = [7 11];
-    bottomgraph.Layout.Column = [6 10];
-
     % ------- Configure UI component appearance ------- %
     % Title attributes
-    title.Text = "<b> XY Positioning Control Software </b>";
-    title.Interpreter = "html";
-    title.FontSize = 20;
+    ptitle.Text = "<b> XY Positioning Control Software </b>";
+    ptitle.Interpreter = "html";
+    ptitle.FontSize = 20;
 
     port_setup.Text = "1) Set port name and baud rate.";
     port_setup.FontSize = 14;
@@ -176,8 +171,8 @@ function Controls()
     step_box.Limits = [1 740];
     step_box.RoundFractionalValues = 1;
 
-    scantypes.Items = ["Choose scan type" "Default Scan" "Sweep Scan" "Targetted Scan"];
-    scantypes.Value = "Choose scan type";   %Default value
+    scantypes.Items = ["Default Scan" "Sweep Scan" "Targetted Scan"];
+    scantypes.Value = "Sweep Scan";   %Default value
 
     averages_box.Value = 0;
     averages_box.Limits = [0 100];
@@ -190,24 +185,13 @@ function Controls()
     ending.Text = 'End';                %Text
     ending.FontColor = [0 0 0];         %Black font
     ending.BackgroundColor = [1 0 0];   %Red background
-    % Tabulate different scan types
-    scantypes.Items = ["Choose scan type" "Default Scan" "Sweep Scan" "Targetted Scan"];
-    scantypes.Value = "Choose scan type";   %Default value 
-
-    %Graph
-    topgraph.Title.String = 'Optical Scan';
-    topgraph.YLabel.String = 'Y-Plane';
-    topgraph.XLabel.String = 'X-Plane';
-    topgraph.FontSize = 24;
-
-    bottomgraph.Title.String = 'Image Reconstruction';
-    bottomgraph.YLabel.String = 'Y-Plane';
-    bottomgraph.XLabel.String = 'X-Plane';
-    bottomgraph.FontSize = 24;
     
     % ------- Button Functionality ------- %
     %Functionality for pressing the begin button
     function beginPressed(src,event)
+        ardfig = uifigure;
+        uialert(ardfig,'Connecting to Arduino...','Alert', 'Icon','info');
+        ardfig.WindowStyle = 'modal';
         port = serialport(port_box.Value, str2double(baud_rate_dd.Value));
         writeline(port, "G28");
         writeline(port, "G91");
@@ -217,18 +201,13 @@ function Controls()
         step = step_box.Value; 
         scantype = scantypes.Value;
         switch scantype
-            case "Choose scan type"
-                alert = uifigure;
-                uialert(alert,'Please choose a scan type','Invalid Selection');
-                pause(2)
-                close(alert)
             case "Default Scan"
                 %scanstatus.Color = [0 1 0];
                 %defaultScan(a,a,a)
             case "Sweep Scan"
                 %progressBar(x_coord,y_coord,step,dwell)
                 scanstatus.Color = [0 1 0];
-                sweepScan(dwell,x_coord,y_coord,step, port, topgraph, bottomgraph);                
+                sweepScan(dwell,x_coord,y_coord,step, port);                
             case "Targetted Scan" 
                 scanstatus.Color = [0 1 0];
                 targettedScan(x_coord,y_coord,port)   
@@ -238,15 +217,43 @@ function Controls()
     %Functionality for pressing the end button
     function endingPressed(src,event)
         scanstatus.Color = [1 0 0];
+        matrix = imread('rice.png');
+        seeResults(matrix)
         writeline(port, "M0");
         pause(2);
         writeline(port, "M2");
         pause(2);
         writeline(port,"G28");        
     end
+
+    function seeResults(matrix)
+        hold on
+        subplot(1,2,1)
+        a = size(matrix);
+        J = filter2(fspecial('sobel'),matrix(1:a(1),1:a(2)));
+        imshow(J)
+        title('Optical Image:')
+        subplot(1,2,2)
+        K = mat2gray(J);
+        imshow(K)
+        title('Reconstructed Image:')
+        end
 end
 
-function sweepScan(dwell,xbound,ybound,step_size, port, topgraph, bottomgraph)
+function sweepScan(dwell,xbound,ybound,step_size, port)
+    % --------- Progress Bar ----------%
+    close(ardfig)
+    progbarfig = uifigure;
+    progbarfig.Position = [500 500 420 180];
+    prog = uiprogressdlg(progbarfig,'Message','Scan Starting!','Title','Scan Progress Bar','Icon','info');
+    prog.ShowPercentage = 1;
+    prog.Value = 0;
+    prog.Cancelable = 1;
+    prog.CancelText = 'Cancel Scan';
+    pause(dwell);
+    prog.Message = 'Scan in progress...';
+    increment = (xbound/step_size) * (ybound/step_size);
+    % --------- Optical Scan ----------%
     import optical_scan.*;
     scan = optical_scan(xbound, ybound, step_size, "/dev/ttyACM1"); 
     direction = 1;
@@ -261,6 +268,11 @@ function sweepScan(dwell,xbound,ybound,step_size, port, topgraph, bottomgraph)
             pause(dwell / 2);
             light_sample(scan);
             pause(dwell / 2);
+            prog.Value = (j)/increment;
+            pause(dwell)
+            if prog.CancelRequested == 1
+                break
+            end
       end
       string = "G0 Y" + (step_size)  + "F10000";
       writeline(port, string);
@@ -268,8 +280,10 @@ function sweepScan(dwell,xbound,ybound,step_size, port, topgraph, bottomgraph)
       v_step(scan, 1);
     end
     optical_matrix = get_sample_matrix(scan);
-    imaging(optical_matrix, topgraph, bottomgraph)
+    seeResults(optical_matrix)
+    endingPressed   
 end
+    
 
 function targettedScan(xbound,ybound,port)
     string = "G0 X" + (xbound) + "G0 Y" + (ybound) + "F10000";
@@ -279,35 +293,3 @@ end
 %function defaultScan(speed,xbound,ybound)
 %    %Insert Default Scan Code Here
 %end
-
-function progressBar(xbound, ybound, step_size, dwell)
-    progbarfig = uifigure;
-    progbarfig.Position = [500 500 420 180];
-    prog = uiprogressdlg(progbarfig,'Message','Scan Starting!','Title','Scan Progress Bar','Icon','info');
-    prog.ShowPercentage = 1;
-    prog.Value = 0;
-    prog.Cancelable = 1;
-    prog.CancelText = 'Cancel Scan';
-    pause(dwell);
-    prog.Message = 'Scan in progress...';
-    for i = 1:((xbound*ybound)/step_size)
-        prog.Value = i/(xbound*ybound);
-        pause(dwell+0.2)
-        if prog.CancelRequested == 1
-            endingPressed
-            break
-        end   
-    end
-    pause(1)
-    prog.Message = 'Scan Complete!';
-    pause(2)
-    close(prog)
-    close(progbarfig)
-end
-
-function imaging(matrix, topgraph, bottomgraph) 
-    image(topgraph,matrix .* 250);
-    colormap('gray');
-    reconstructed = mat2gray(matrix);
-    imshow(reconstructed)
-end
