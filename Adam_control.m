@@ -156,7 +156,7 @@ function Controls()
     baud_rate_dd.Items = {'110', '300', '600', '1200', '2400', '4800', '9600', '14400', '19200', '38400', '57600', '115200', '128000', '256000'};
     baud_rate_dd.Value = '115200';
 
-    dwell_time_knob.Items = {'0.4', '0.6', '0.8', '1.0', '1.2', '1.4', '1.6', '1.8', '2.0'};
+    dwell_time_knob.Items = {'0.2', '0.4', '0.6', '0.8', '1.0', '1.2', '1.4', '1.6', '1.8', '2.0'};
     dwell_time_knob.Value = '1.0';
 
     x_coord_box.Value = 100;                 %Default value              
@@ -283,7 +283,7 @@ function Controls()
       direction = direction * -1;
       v_step(scan, 1);
     end
-    optical_matrix = get_sample_matrix(scan);
+    optical_matrix = get_sample_matrix(scan) .* 2.5;
     seeResults(optical_matrix)   
     end
 
