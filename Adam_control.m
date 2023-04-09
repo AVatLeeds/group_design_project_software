@@ -206,11 +206,13 @@ function Controls()
         sampler_port = sampler_port_box.Value;
         port = serialport(scanner_port_box.Value, str2double(scanner_baud_rate_dd.Value));
         writeline(port, "G28");
-        pause(0.1);
+        while (readline(port) ~= "ok") end
         writeline(port, "G91");
-        pause(0.1);
-        writeline(port, "G0 Z50");
-        pause(0.1);
+        while (readline(port) ~= "ok") end
+        writeline(port, "G0 Z3");
+        while (readline(port) ~= "ok") end
+        writeline(port, "M400");
+        while (readline(port) ~= "ok") end
         dwell = str2double(dwell_time_knob.Value);
         averages = uint32(averages_box.Value);
         x_coord = x_coord_box.Value;
@@ -235,10 +237,11 @@ function Controls()
     function endingPressed(src,event)
         scanstatus.Color = [1 0 0];
         writeline(port, "M0");
-        pause(2);
+        while (readline(port) ~= "ok") end
         writeline(port, "M2");
-        pause(2);
-        writeline(port,"G28");        
+        while (readline(port) ~= "ok") end
+        writeline(port,"G28");  
+        while (readline(port) ~= "ok") end      
     end
 
     function seeResults(matrix)
@@ -284,6 +287,9 @@ function Controls()
       for j = 1:(xbound / step_size)
             string = "G0 X" + (step_size * direction) + "F10000";
             writeline(port, string);
+            flush(port); 
+            writeline(port, "M400");
+            while (readline(port) ~= "ok") end
             h_step(scan, direction);
             pause(dwell / 2);
             if averages == 0
@@ -297,6 +303,7 @@ function Controls()
             pause(dwell)
             if prog.CancelRequested == 1
                 writeline(port,'M0');
+                while (readline(port) ~= "ok") end
                 break
             end
       end
@@ -305,6 +312,9 @@ function Controls()
       end
       string = "G0 Y" + (step_size)  + "F10000";
       writeline(port, string);
+      flush(port); 
+      writeline(port, "M400");
+      while (readline(port) ~= "ok") end
       direction = direction * -1;
       v_step(scan, 1);
     end
@@ -318,6 +328,9 @@ function Controls()
     for j = 1:(xbound / step_size)
         string = "G0 X" + (step_size * direction) + "F10000";
         writeline(port, string);
+        flush(port); 
+        writeline(port, "M400");
+        while (readline(port) ~= "ok") end
         h_step(scan, direction);
         pause(dwell / 2);
         if averages == 0
@@ -331,10 +344,11 @@ function Controls()
         pause(dwell)
         if prog.CancelRequested == 1
             writeline(port,'M0');
+            while (readline(port) ~= "ok") end
             break
         end
     end
-    optical_matrix = get_sample_matrix(scan) .* 5;
+    optical_matrix = get_sample_matrix(scan) .* 10;
     seeResults(optical_matrix)   
     end
 
@@ -345,7 +359,10 @@ end
 
 function targettedScan(xbound,ybound,port)
     string = "G0 X" + (xbound) + "G0 Y" + (ybound) + "F10000";
-    writeline(port, string);  
+    writeline(port, string); 
+    flush(port); 
+    writeline(port, "M400");
+    while (readline(port) ~= "ok") end
 end
 
 %function defaultScan(speed,xbound,ybound)
