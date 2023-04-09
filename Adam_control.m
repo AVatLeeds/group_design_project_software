@@ -5,7 +5,7 @@
 % Module: ELEC3885 - Group Design Project
 % Description:
 %------------------------------------------------%
-% A program which generates a GUI in order to
+% A program which generates a GUI in order tode
 % control the positioning system, which then 
 % outputs graphs showing the results of the scan
 %------------------------------------------------%
@@ -28,12 +28,13 @@ function Controls()
 
     % ------- Manage App Layout ------- %
     grid = uigridlayout(fig,[10 10]);
-    grid.RowHeight = {50, 50, 50, 50, 200, 50, 50, 50, 50, 20, 50, '1x'};
+    grid.RowHeight = {50, 50, 50, 50, 50, 200, 50, 50, 50, 50, 20, 50, '1x'};
     grid.ColumnWidth = {150, 150, 150, 150, 100, 100, 100, 100, 100,'1x'};
 
     % ------- Create UI components ------- %
     ptitle = uilabel(grid);                  % Program title
-    port_setup = uilabel(grid);             % Serial port setup instructions
+    scanner_port_setup = uilabel(grid);             % Scanner serial port setup instructions
+    sampler_port_setup = uilabel(grid);             % Scanner serial port setup instructions
     dimensions = uilabel(grid);             % Scan dimension instructions  
     step_size = uilabel(grid);              % Step size instructions
     dwell_time= uilabel(grid);              % Dwell time instructions
@@ -43,8 +44,9 @@ function Controls()
 
     scanstatus = uilamp(grid);              % Scan status lamp
 
-    baud_rate_dd = uidropdown(grid);           % Drop-down for setting baud rate.
-    port_box = uieditfield(grid, 'text');       % Text entry box for serial port name
+    scanner_baud_rate_dd = uidropdown(grid);           % Drop-down for setting scanner baud rate.
+    scanner_port_box = uieditfield(grid, 'text');       % Text entry box for scanner serial port name
+    sampler_port_box = uieditfield(grid, 'text');       % Text entry box for sampler serial port name
     scantypes = uidropdown(grid);
     dwell_time_knob = uiknob(grid,'discrete');        %Discrete Speed Control Knob
     begin = uibutton(grid,'ButtonPushedFcn',@beginPressed);    %Begin Button
@@ -63,64 +65,70 @@ function Controls()
     ptitle.Layout.Row = 1;
     ptitle.Layout.Column = [3 8];
 
-    port_setup.Layout.Row = 2;
-    port_setup.Layout.Column = [1 2];
+    scanner_port_setup.Layout.Row = 2;
+    scanner_port_setup.Layout.Column = [1 2];
 
-    dimensions.Layout.Row = 3;
+    sampler_port_setup.Layout.Row = 3;
+    sampler_port_setup.Layout.Column = [1 2];
+
+    dimensions.Layout.Row = 4;
     dimensions.Layout.Column = [1 2];
 
-    step_size.Layout.Row = 4;
+    step_size.Layout.Row = 5;
     step_size.Layout.Column = [1 2];
 
-    dwell_time.Layout.Row = 5;
+    dwell_time.Layout.Row = 6;
     dwell_time.Layout.Column = [1 2];
 
-    averages.Layout.Row = 6;
+    averages.Layout.Row = 7;
     averages.Layout.Column = [1 2];
 
-    scan_lamp.Layout.Row = 10;
+    scan_lamp.Layout.Row = 11;
     scan_lamp.Layout.Column = 1;
 
-    scanstatus.Layout.Row = 10;
+    scanstatus.Layout.Row = 11;
     scanstatus.Layout.Column = 2;
 
-    port_box.Layout.Row = 2;
-    port_box.Layout.Column = 3;
+    scanner_port_box.Layout.Row = 2;
+    scanner_port_box.Layout.Column = 3;
 
-    baud_rate_dd.Layout.Row = 2;
-    baud_rate_dd.Layout.Column = 4;
+    scanner_baud_rate_dd.Layout.Row = 2;
+    scanner_baud_rate_dd.Layout.Column = 4;
 
-    x_coord_box.Layout.Row = 3;
+    sampler_port_box.Layout.Row = 3;
+    sampler_port_box.Layout.Column = 3;
+
+    x_coord_box.Layout.Row = 4;
     x_coord_box.Layout.Column = 3;
 
-    y_coord_box.Layout.Row = 3;
+    y_coord_box.Layout.Row = 4;
     y_coord_box.Layout.Column = 4;
 
-    step_box.Layout.Row = 4;
+    step_box.Layout.Row = 5;
     step_box.Layout.Column = 3;
 
-    dwell_time_knob.Layout.Row = 5;
+    dwell_time_knob.Layout.Row = 6;
     dwell_time_knob.Layout.Column = [3 4];
 
-    averages_box.Layout.Row = 6;
+    averages_box.Layout.Row = 7;
     averages_box.Layout.Column = 3;
 
-    begin.Layout.Row = 9;
+    begin.Layout.Row = 10;
     begin.Layout.Column = [1 2];
 
-    ending.Layout.Row = 9;
+    ending.Layout.Row = 10;
     ending.Layout.Column = [3 4];
 
-    x_coord_box.Layout.Row = 3;
+    x_coord_box.Layout.Row = 4;
     x_coord_box.Layout.Column = 3;
 
-    y_coord_box.Layout.Row = 3;
+    y_coord_box.Layout.Row = 4;
     y_coord_box.Layout.Column = 4;
 
-    scan.Layout.Row = 8;
+    scan.Layout.Row = 9;
     scan.Layout.Column = 1;
 
-    scantypes.Layout.Row = 8;
+    scantypes.Layout.Row = 9;
     scantypes.Layout.Column = 3;
 
     % ------- Configure UI component appearance ------- %
@@ -129,10 +137,13 @@ function Controls()
     ptitle.Interpreter = "html";
     ptitle.FontSize = 20;
 
-    port_setup.Text = "1) Set port name and baud rate.";
-    port_setup.FontSize = 14;
+    scanner_port_setup.Text = "1) Set scanner port name and baud rate.";
+    scanner_port_setup.FontSize = 14;
 
-    dimensions.Text = "2) Set port dimensions X (mm) and Y (mm).";
+    sampler_port_setup.Text = "1) Set sampler port name";
+    sampler_port_setup.FontSize = 14;
+
+    dimensions.Text = "2) Set scan dimensions X (mm) and Y (mm).";
     dimensions.FontSize = 14;
 
     step_size.Text = "3) Set step size (mm).";
@@ -141,7 +152,7 @@ function Controls()
     dwell_time.Text = "4) Set dwell time (s).";
     dwell_time.FontSize = 14;
 
-    averages.Text = "5) Set number of averages.";
+    averages.Text = "5) Set number of averages (0 for no averaging).";
     averages.FontSize = 14;
 
     scan.Text = "6) Set Scan Type.";
@@ -153,10 +164,10 @@ function Controls()
     % Set Lamp Colour
     scanstatus.Color = [1 0 0];
 
-    baud_rate_dd.Items = {'110', '300', '600', '1200', '2400', '4800', '9600', '14400', '19200', '38400', '57600', '115200', '128000', '256000'};
-    baud_rate_dd.Value = '115200';
+    scanner_baud_rate_dd.Items = {'110', '300', '600', '1200', '2400', '4800', '9600', '14400', '19200', '38400', '57600', '115200', '128000', '256000'};
+    scanner_baud_rate_dd.Value = '115200';
 
-    dwell_time_knob.Items = {'0.2', '0.4', '0.6', '0.8', '1.0', '1.2', '1.4', '1.6', '1.8', '2.0'};
+    dwell_time_knob.Items = {'0.0', '0.2', '0.4', '0.6', '0.8', '1.0', '1.2', '1.4', '1.6', '1.8', '2.0'};
     dwell_time_knob.Value = '1.0';
 
     x_coord_box.Value = 100;                 %Default value              
@@ -192,10 +203,16 @@ function Controls()
         ardfig = uifigure;
         uialert(ardfig,'Connecting to Arduino...','Alert', 'Icon','info');
         ardfig.WindowStyle = 'modal';
-        port = serialport(port_box.Value, str2double(baud_rate_dd.Value));
+        sampler_port = sampler_port_box.Value;
+        port = serialport(scanner_port_box.Value, str2double(scanner_baud_rate_dd.Value));
         writeline(port, "G28");
+        pause(0.1);
         writeline(port, "G91");
+        pause(0.1);
+        writeline(port, "G0 Z50");
+        pause(0.1);
         dwell = str2double(dwell_time_knob.Value);
+        averages = uint32(averages_box.Value);
         x_coord = x_coord_box.Value;
         y_coord = y_coord_box.Value;
         step = step_box.Value; 
@@ -207,7 +224,7 @@ function Controls()
             case "Sweep Scan"
                 %progressBar(x_coord,y_coord,step,dwell)
                 scanstatus.Color = [0 1 0];
-                sweepScan(dwell,x_coord,y_coord,step, port, ardfig);                
+                sweepScan(dwell,x_coord,y_coord,step, port, ardfig, sampler_port, averages);                
             case "Targetted Scan" 
                 scanstatus.Color = [0 1 0];
                 targettedScan(x_coord,y_coord,port)   
@@ -229,7 +246,7 @@ function Controls()
         subplot(1,2,1)
         a = size(matrix);
         J = filter2(fspecial('sobel'),matrix(1:a(1),1:a(2)));
-        imshow(J)
+        imshow(matrix / 5);
         title('Optical Image:')
         subplot(1,2,2)
         K = mat2gray(J);
@@ -237,12 +254,12 @@ function Controls()
         title('Reconstructed Image:')
     end
     
-    function sweepScan(dwell,xbound,ybound,step_size, port, ardfig)
+    function sweepScan(dwell,xbound,ybound,step_size, port, ardfig, sampler_port, averages)
     % --------- Progress Bar ----------%
     
     % --------- Optical Scan ----------%
     import optical_scan.*;
-    scan = optical_scan(xbound, ybound, step_size, "/dev/ttyACM1"); 
+    scan = optical_scan(xbound, ybound, step_size, sampler_port); 
     close(ardfig)
     progbarfig = uifigure;
     progbarfig.Position = [500 500 420 180];
@@ -253,19 +270,27 @@ function Controls()
     prog.CancelText = 'Cancel Scan';
     pause(dwell);
     prog.Message = 'Scan in progress...';
-    increment = (xbound/step_size) * (ybound/step_size);
+    increment = (xbound/step_size) * ((ybound/step_size) + 1);
     direction = 1;
     total = 0;
     for i = 1:(ybound / step_size)
         pause(dwell / 2);
-        light_sample(scan);
+        if averages == 0
+            light_sample(scan);
+        else 
+            light_sample_averaged(scan, averages);
+        end
         pause(dwell / 2);
       for j = 1:(xbound / step_size)
             string = "G0 X" + (step_size * direction) + "F10000";
             writeline(port, string);
             h_step(scan, direction);
             pause(dwell / 2);
-            light_sample(scan);
+            if averages == 0
+                light_sample(scan);
+            else 
+                light_sample_averaged(scan, averages);
+            end
             pause(dwell / 2);
             total = total + 1;
             prog.Value = (total)/increment;
@@ -283,7 +308,33 @@ function Controls()
       direction = direction * -1;
       v_step(scan, 1);
     end
-    optical_matrix = get_sample_matrix(scan) .* 2.5;
+    pause(dwell / 2);
+    if averages == 0
+        light_sample(scan);
+    else 
+        light_sample_averaged(scan, averages);
+    end
+    pause(dwell / 2);
+    for j = 1:(xbound / step_size)
+        string = "G0 X" + (step_size * direction) + "F10000";
+        writeline(port, string);
+        h_step(scan, direction);
+        pause(dwell / 2);
+        if averages == 0
+            light_sample(scan);
+        else 
+            light_sample_averaged(scan, averages);
+        end
+        pause(dwell / 2);
+        total = total + 1;
+        prog.Value = (total)/increment;
+        pause(dwell)
+        if prog.CancelRequested == 1
+            writeline(port,'M0');
+            break
+        end
+    end
+    optical_matrix = get_sample_matrix(scan) .* 5;
     seeResults(optical_matrix)   
     end
 

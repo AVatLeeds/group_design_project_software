@@ -46,7 +46,7 @@ classdef optical_scan < handle
         function light_sample_averaged(obj, num_averages)
             obj.sample_matrix(obj.current_coord(1), obj.current_coord(2)) = readVoltage(obj.sampler, "A0");
             for i = 1:(num_averages - 1)
-                obj.sample_matrix(obj.current_coord(1), obj.current_coord(2)) = (obj.sample_matrix(obj.current_coord(0), obj.current_coord(1)) + readVoltage(obj.sampler, "A0")) / 2;
+                obj.sample_matrix(obj.current_coord(1), obj.current_coord(2)) = (obj.sample_matrix(obj.current_coord(1), obj.current_coord(2)) + readVoltage(obj.sampler, "A0")) / 2;
             end
         end
 
