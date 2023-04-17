@@ -28,7 +28,7 @@ function Controls()
 
     % ------- Manage App Layout ------- %
     grid = uigridlayout(fig,[10 10]);
-    grid.RowHeight = {50, 50, 50, 50, 50, 200, 50, 50, 50, 50, 20, 50, '1x'};
+    grid.RowHeight = {50, 50, 50, 50, 50, 200, 50, 50, 50, 50, 50, 50, '1x'};
     grid.ColumnWidth = {150, 150, 150, 150, 100, 100, 100, 100, 100,'1x'};
 
     % ------- Create UI components ------- %
@@ -41,6 +41,7 @@ function Controls()
     averages = uilabel(grid);               % Averages instructions
     scan_lamp = uilabel(grid);              % Scan Status Lamp
     scan = uilabel(grid);                   % Scan type drow-down
+    scale_factor = uilabel(grid);
 
     scanstatus = uilamp(grid);              % Scan status lamp
 
@@ -55,6 +56,7 @@ function Controls()
     y_coord_box = uieditfield(grid,'numeric');   %Y-coordinate numeric input box
     step_box = uieditfield(grid, 'numeric');
     averages_box = uieditfield(grid, 'numeric');
+    scale_factor_box = uieditfield(grid, 'numeric');
 
     graph = uiaxes(grid);
     graph.Layout.Row = [1 10];
@@ -83,10 +85,10 @@ function Controls()
     averages.Layout.Row = 7;
     averages.Layout.Column = [1 2];
 
-    scan_lamp.Layout.Row = 11;
+    scan_lamp.Layout.Row = 12;
     scan_lamp.Layout.Column = 1;
 
-    scanstatus.Layout.Row = 11;
+    scanstatus.Layout.Row = 12;
     scanstatus.Layout.Column = 2;
 
     scanner_port_box.Layout.Row = 2;
@@ -113,10 +115,10 @@ function Controls()
     averages_box.Layout.Row = 7;
     averages_box.Layout.Column = 3;
 
-    begin.Layout.Row = 10;
+    begin.Layout.Row = 11;
     begin.Layout.Column = [1 2];
 
-    ending.Layout.Row = 10;
+    ending.Layout.Row = 11;
     ending.Layout.Column = [3 4];
 
     x_coord_box.Layout.Row = 4;
@@ -131,6 +133,12 @@ function Controls()
     scantypes.Layout.Row = 9;
     scantypes.Layout.Column = 3;
 
+    scale_factor.Layout.Row = 10;
+    scale_factor.Layout.Column = 1;
+
+    scale_factor_box.Layout.Row = 10;
+    scale_factor_box.Layout.Column = 3;
+
     % ------- Configure UI component appearance ------- %
     % Title attributes
     ptitle.Text = "<b> XY Positioning Control Software </b>";
@@ -140,23 +148,26 @@ function Controls()
     scanner_port_setup.Text = "1) Set scanner port name and baud rate.";
     scanner_port_setup.FontSize = 14;
 
-    sampler_port_setup.Text = "1) Set sampler port name";
+    sampler_port_setup.Text = "2) Set sampler port name";
     sampler_port_setup.FontSize = 14;
 
-    dimensions.Text = "2) Set scan dimensions X (mm) and Y (mm).";
+    dimensions.Text = "3) Set scan dimensions X (mm) and Y (mm).";
     dimensions.FontSize = 14;
 
-    step_size.Text = "3) Set step size (mm).";
+    step_size.Text = "4) Set step size (mm).";
     step_size.FontSize = 14;
 
-    dwell_time.Text = "4) Set dwell time (s).";
+    dwell_time.Text = "5) Set dwell time (s).";
     dwell_time.FontSize = 14;
 
-    averages.Text = "5) Set number of averages (0 for no averaging).";
+    averages.Text = "6) Set number of averages (0 for no averaging).";
     averages.FontSize = 14;
 
-    scan.Text = "6) Set Scan Type.";
+    scan.Text = "7) Set Scan Type.";
     scan.FontSize = 14;
+
+    scale_factor.Text = "8) Scaling factor for output data.";
+    scale_factor.FontSize = 14;
 
     scan_lamp.Text = "Scan Status:";
     scan_lamp.FontSize = 14;
@@ -167,7 +178,7 @@ function Controls()
     scanner_baud_rate_dd.Items = {'110', '300', '600', '1200', '2400', '4800', '9600', '14400', '19200', '38400', '57600', '115200', '128000', '256000'};
     scanner_baud_rate_dd.Value = '115200';
 
-    dwell_time_knob.Items = {'0.0', '0.2', '0.4', '0.6', '0.8', '1.0', '1.2', '1.4', '1.6', '1.8', '2.0'};
+    dwell_time_knob.Items = {'0.0', '0.1', '0.2', '0.4', '0.6', '0.8', '1.0', '1.2', '1.4', '1.6', '1.8', '2.0'};
     dwell_time_knob.Value = '1.0';
 
     x_coord_box.Value = 100;                 %Default value              
@@ -184,6 +195,9 @@ function Controls()
 
     scantypes.Items = ["Default Scan" "Sweep Scan" "Targetted Scan"];
     scantypes.Value = "Sweep Scan";   %Default value
+
+    scale_factor_box.Value = 10;
+    scale_factor_box.Limits = [1 100];
 
     averages_box.Value = 0;
     averages_box.Limits = [0 100];
@@ -226,7 +240,7 @@ function Controls()
             case "Sweep Scan"
                 %progressBar(x_coord,y_coord,step,dwell)
                 scanstatus.Color = [0 1 0];
-                sweepScan(dwell,x_coord,y_coord,step, port, ardfig, sampler_port, averages);                
+                sweepScan(dwell,x_coord,y_coord,step, port, ardfig, sampler_port, averages, scale_factor_box.Value);                
             case "Targetted Scan" 
                 scanstatus.Color = [0 1 0];
                 targettedScan(x_coord,y_coord,port)   
@@ -257,7 +271,7 @@ function Controls()
         title('Reconstructed Image:')
     end
     
-    function sweepScan(dwell,xbound,ybound,step_size, port, ardfig, sampler_port, averages)
+    function sweepScan(dwell,xbound,ybound,step_size, port, ardfig, sampler_port, averages, scale_factor)
     % --------- Progress Bar ----------%
     
     % --------- Optical Scan ----------%
@@ -348,7 +362,7 @@ function Controls()
             break
         end
     end
-    optical_matrix = get_sample_matrix(scan) .* 10;
+    optical_matrix = get_sample_matrix(scan) .* scale_factor;
     seeResults(optical_matrix)   
     end
 
