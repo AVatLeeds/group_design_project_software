@@ -85,6 +85,14 @@ while current_radius <= max_distance_mm + centre_distance_offset_mm;
     current_radius = current_radius + radius_step_mm;
 end
 
+[x, y, v] = pol2cart(datapoints(1, :), datapoints(2, :), datapoints(3, :));
+y = y + 400;
+x_query_vector = (1:5:max_width_mm);
+y_query_vector = (1:5:max_distance_mm);
+[x_query, y_query] = meshgrid(x_query_vector, y_query_vector);
+queried_values = griddata(x, y, v, x_query, y_query, 'natural');
+imagesc(x_query_vector, y_query_vector, queried_values);
+
 function rotate(Arduino, direction, steps)
     if direction == -1
         writeDigitalPin(Arduino, "D8", 0);
