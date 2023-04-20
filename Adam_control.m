@@ -362,7 +362,11 @@ function Controls()
             break
         end
     end
-    optical_matrix = get_sample_matrix(scan) .* scale_factor;
+    optical_matrix = get_sample_matrix(scan)
+    maximum = max(optical_matrix);
+    minimum = min(optical_matrix);
+    optical_matrix = optical_matrix - minimum;
+    optical_matrix = optical_matrix .* scale_factor;
     seeResults(optical_matrix)   
     end
 
