@@ -11,10 +11,10 @@ writeline(tcpip, ':RUN');
 writeline(tcpip, ':SINGle');
 
 writeline(tcpip, ':TRIG:STAT?');
-trigger_status = readline(tcpip)
+trigger_status = readline(tcpip);
 while ~strcmp(trigger_status, "STOP")
     writeline(tcpip, ':TRIG:STAT?');
-    trigger_status = readline(tcpip)
+    trigger_status = readline(tcpip);
 end
 
 writeline(tcpip, ':WAV:MODE RAW');
@@ -40,15 +40,51 @@ end
 output_waveform_data = output_waveform_data - 128;
 output_waveform_data = output_waveform_data * y_increment;
 
-figure(1);
-plot(output_waveform_data, 'color', [0.7, 0.7, 0.7]);
+writeline(tcpip, ':WAV:SOURce CHAN2');
+writeline(tcpip, ":WAV:DATA?");
+string = readline(tcpip);
+string = convertStringsToChars(string);
+ascii_data = string(12:end);
 
-difference = zeros(length(output_waveform_data), 1);
-for i = 1:(length(output_waveform_data) - 1)
-    difference(i) = output_waveform_data(i + 1) - output_waveform_data(i);
+tune_waveform_data = zeros(length(ascii_data), 1);
+
+for i = 1:length(ascii_data)
+    tune_waveform_data(i) = uint8(ascii_data(i));
 end
 
-transitions = ((normalize(abs(difference))) / 2) .^ 2;
+timebase_vector = 0:x_increment:(x_increment * (length(output_waveform_data) - 1));
+
+figure(1);
+plot(output_waveform_data, 'color', [0.7, 0.7, 0.7]);
+hold on;
+
+% zig-zag filter
+for i = 1:(length(output_waveform_data) - 4)
+    differences = [(output_waveform_data(i) - output_waveform_data(i + 1)), (output_waveform_data(i + 1) - output_waveform_data(i + 2)), (output_waveform_data(i + 2) - output_waveform_data(i + 3))];
+    differences = abs(differences);
+    if abs(output_waveform_data(i) - output_waveform_data(i + 3)) < min(differences);
+        output_waveform_data(i + 1) = (output_waveform_data(i) + output_waveform_data(i + 3)) / 2;
+        output_waveform_data(i + 2) = (output_waveform_data(i) + output_waveform_data(i + 3)) / 2;
+    end
+end
+
+% spike filter
+for i = 1:(length(output_waveform_data) - 3)
+    sequence = [output_waveform_data(i), output_waveform_data(i + 1), output_waveform_data(i + 2)];
+    sequence = abs(sequence - sequence(1));
+    if (sequence(2) > sequence(1)) && (sequence(2) > sequence(3))
+        output_waveform_data(i + 1) = (output_waveform_data(i) + output_waveform_data(i + 2)) / 2;
+    end
+end
+
+plot(output_waveform_data);
+
+differences = zeros(length(tune_waveform_data), 1);
+for i = 1:(length(tune_waveform_data) - 1)
+    differences(i) = tune_waveform_data(i + 1) - tune_waveform_data(i);
+end
+
+transitions = ((normalize(abs(differences))) / 2) .^ 2;
 
 for i = 1:length(transitions)
     if transitions(i) >= 1
@@ -186,11 +222,12 @@ hold on;
 plot(waveform_data_2);
 
 indicies = 1:1:length(waveform_data_1);
-[fit_1, goodness_of_fit_1] = fit(indicies', waveform_data_1', 'fourier3')
-[fit_2, goodness_of_fit_2] = fit(indicies', waveform_data_2', 'fourier3')
+[fit_1, goodness_of_fit_1] = fit(indicies', waveform_data_1', 'fourier3');
+[fit_2, goodness_of_fit_2] = fit(indicies', waveform_data_2', 'fourier3');
 
 plot(fit_1);
 plot(fit_2);
+hold off;
 
 fit_sampling_indicies = 1:(length(waveform_data_1) / length(output_waveform_data)):length(waveform_data_1);
 output_waveform_data_separated_fitted_1 = fit_1(fit_sampling_indicies);
@@ -221,8 +258,15 @@ plot(RMSE_array(1, :));
 RMSE_array = RMSE_array(:, order);
 
 plot(circshift(output_waveform_data_separated_fitted_2, RMSE_array(2, 1)));
+hold off;
 
-phase_delay = y_increment * RMSE_array(2, 1)
+if RMSE_array(2, 1) > (length(output_waveform_data_separated_fitted_2) / 2)
+    phase_delay_steps = length(output_waveform_data_separated_fitted_2) - RMSE_array(2, 1);
+else
+    phase_delay_steps = RMSE_array(2, 1);
+end
+
+phase_delay = y_increment * phase_delay_steps
 
 % shifted_output_waveform_data = circshift(output_waveform_data_separated_fitted_2, RMSE_array(2, 1));
 % shifted_output_waveform_data = shifted_output_waveform_data - shifted_output_waveform_data(1);
